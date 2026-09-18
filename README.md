@@ -8,10 +8,13 @@ Scrapy + Redis（分布式调度/去重）+ PostgreSQL（数据存储）+ Scrapy
 
 ```
 .
-├── docker-compose.yml       # redis / postgres / scrapyd 三个服务
+├── docker-compose.yml       # redis / postgres / scrapyd / scrapydweb 四个服务
 ├── Dockerfile                # scrapyd 运行环境镜像
 ├── requirements.txt
 ├── scrapyd.conf               # scrapyd daemon 配置
+├── scrapydweb/                # scrapydweb 可视化管理界面镜像与配置
+│   ├── Dockerfile
+│   └── scrapydweb_settings_v11.py
 ├── init-db/01_init.sql        # 数据库初始化脚本（建表）
 ├── .env.example
 └── myproject/                 # Scrapy 项目
@@ -33,6 +36,7 @@ docker compose up -d --build
 - Redis: `localhost:6379`
 - PostgreSQL: `localhost:5432`（首次启动会自动执行 `init-db/01_init.sql` 建表）
 - Scrapyd: `http://localhost:6800`
+- scrapydweb（可视化管理界面）: `http://localhost:5000`
 
 ## 2. 部署 Spider 到 Scrapyd
 
@@ -76,7 +80,32 @@ docker compose exec redis redis-cli lpush quotes:start_urls "https://quotes.tosc
 docker compose exec postgres psql -U scrapy_user -d scrapy_db -c "SELECT * FROM quotes LIMIT 10;"
 ```
 
-## 5. 常用 Scrapyd 任务管理命令
+## 5. 使用 scrapydweb 可视化管理
+
+打开 `http://localhost:5000`，即可在网页上完成之前用 `curl` 做的事情：
+
+- 查看已部署的项目、spider 列表
+- 一键调度/取消任务，查看任务状态和实时日志
+- 配置定时任务（周期性调度某个 spider）
+
+默认未开启登录鉴权（`SCRAPYDWEB_ENABLE_AUTH=false`），仅建议本地/内网使用。如需开启：
+
+```bash
+# .env 中设置
+SCRAPYDWEB_ENABLE_AUTH=true
+SCRAPYDWEB_USERNAME=your_user
+SCRAPYDWEB_PASSWORD=your_pass
+```
+
+修改后重新创建容器生效：
+
+```bash
+docker compose up -d scrapydweb
+```
+
+多个 scrapyd 节点时，在 `scrapydweb/scrapydweb_settings_v11.py` 的 `SCRAPYD_SERVERS` 列表中追加对应的 `ip:port` 即可统一管理。
+
+## 6. 常用 Scrapyd 任务管理命令
 
 ```bash
 # 查看运行中/已完成的任务
@@ -103,4 +132,4 @@ scrapy crawl quotes
 
 - 新增 Spider：在 `myproject/myproject/spiders/` 下继承 `scrapy_redis.spiders.RedisSpider`（或 `RedisCrawlSpider`），设置唯一的 `redis_key`。
 - 新增数据表/字段：修改 `init-db/01_init.sql`，并在 `pipelines.py` 中同步调整写入逻辑。
-- 定时调度：可用 `curl schedule.json` 配合 crontab，或引入 `scrapydweb` 做可视化管理（未包含在本模板中）。
+- 定时调度：可用 `curl schedule.json` 配合 crontab，也可以直接用 scrapydweb 网页上的定时任务功能（见上文第 5 节）。

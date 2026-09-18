@@ -53,6 +53,20 @@ services:
       - scrapyd_data:/app
     restart: unless-stopped
 
+  scrapydweb:
+    build: ./scrapydweb
+    container_name: scrapy_scrapydweb
+    depends_on:
+      - scrapyd
+    environment:
+      SCRAPYD_SERVER: scrapyd:6800
+      SCRAPYDWEB_ENABLE_AUTH: ${SCRAPYDWEB_ENABLE_AUTH:-false}
+      SCRAPYDWEB_USERNAME: ${SCRAPYDWEB_USERNAME:-admin}
+      SCRAPYDWEB_PASSWORD: ${SCRAPYDWEB_PASSWORD:-admin}
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
 volumes:
   redis_data:
   pg_data:
