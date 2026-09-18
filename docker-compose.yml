@@ -1,0 +1,59 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: scrapy_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: scrapy_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-scrapy_db}
+      POSTGRES_USER: ${POSTGRES_USER:-scrapy_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scrapy_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scrapy_user}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  scrapyd:
+    build: .
+    container_name: scrapy_scrapyd
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-scrapy_db}
+      POSTGRES_USER: ${POSTGRES_USER:-scrapy_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scrapy_pass}
+    ports:
+      - "6800:6800"
+    volumes:
+      - scrapyd_data:/app
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  pg_data:
+  scrapyd_data:

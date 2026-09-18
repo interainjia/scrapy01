@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.scrapy/
+*.egg-info/
+.env
+venv/
+.venv/
+logs/
+eggs/
+dbs/
+scrapyd_data/
+.claude/

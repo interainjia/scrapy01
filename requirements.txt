@@ -1,0 +1,14 @@
+scrapy==2.11.2
+scrapy-redis==0.9.1
+redis==5.0.8
+psycopg2-binary==2.9.9
+scrapyd==1.4.3
+scrapyd-client==1.2.3
+
+# Pinned: Scrapy 2.11.2's TLS context factory imports a private Twisted API
+# (_setAcceptableProtocols) that newer Twisted releases removed. Without an
+# upper bound, pip resolves the latest Twisted/pyOpenSSL and the scrapyd
+# worker crashes on startup with ImportError.
+twisted==24.3.0
+pyopenssl==24.2.1
+service-identity==24.1.0
