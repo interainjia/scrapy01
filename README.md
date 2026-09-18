@@ -2,6 +2,8 @@
 
 Scrapy + Redis（分布式调度/去重）+ PostgreSQL（数据存储）+ Scrapyd（任务调度）的可运行模板。
 
+仓库地址：https://github.com/interainjia/scrapy01
+
 ## 目录结构
 
 ```
